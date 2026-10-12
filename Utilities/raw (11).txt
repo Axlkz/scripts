@@ -1,0 +1,231 @@
+MaterialMon = function()
+
+		local I = game.Players.LocalPlayer;		local e = I.Character and I.Character:FindFirstChild("HumanoidRootPart");
+
+		if not e then
+
+			return;
+
+		end;
+
+		shouldRequestEntrance = function(I, K)
+
+				local n = (e.Position - I).Magnitude;
+
+				if n >= K then
+
+					replicated.Remotes.CommF_:InvokeServer("requestEntrance", I);
+
+				end;
+
+			end;
+
+		if World1 then
+
+			if SelectMaterial == "Angel Wings" then
+
+				MMon = {
+
+						"Shanda",
+
+						"Royal Squad",
+
+						"Royal Soldier",
+
+						"Wysper",
+
+						"Thunder God",
+
+					};
+
+				MPos = CFrame.new(-4698, 845, -1912);
+
+				SP = "Default";
+
+				local I = Vector3.new(-4607.82275, 872.54248, -1667.55688);
+
+				shouldRequestEntrance(I, 10000);
+
+			elseif SelectMaterial == "Leather + Scrap Metal" then
+
+				MMon = { "Brute", "Pirate" };
+
+				MPos = CFrame.new(-1145, 15, 4350);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Magma Ore" then
+
+				MMon = { "Military Soldier", "Military Spy", "Magma Admiral" };
+
+				MPos = CFrame.new(-5815, 84, 8820);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Fish Tail" then
+
+				MMon = { "Fishman Warrior", "Fishman Commando", "Fishman Lord" };
+
+				MPos = CFrame.new(61123, 19, 1569);
+
+				SP = "Default";
+
+				local I = Vector3.new(61163.8515625, 5.342342376709, 1819.7841796875);
+
+				shouldRequestEntrance(I, 17000);
+
+			end;
+
+		elseif World2 then
+
+			if SelectMaterial == "Leather + Scrap Metal" then
+
+				MMon = { "Marine Captain" };
+
+				MPos = CFrame.new(-2010.5059814453, 73.001159667969, -3326.6208496094);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Magma Ore" then
+
+				MMon = { "Magma Ninja", "Lava Pirate" };
+
+				MPos = CFrame.new(-5428, 78, -5959);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Ectoplasm" then
+
+    MMon = {
+
+            "Ship Deckhand",
+
+            "Ship Engineer",
+
+            "Ship Steward",
+
+            "Ship Officer",
+
+        };
+
+    MPos = CFrame.new(911.35827636719, 125.95812988281, 33159.5390625);
+
+    SP = "Default";
+
+    local I = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125);
+
+    
+
+    shouldRequestEntrance(I, 1000); 
+
+			elseif SelectMaterial == "Mystic Droplet" then
+
+				MMon = { "Water Fighter" };
+
+				MPos = CFrame.new(-3385, 239, -10542);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Radioactive Material" then
+
+				MMon = { "Factory Staff" };
+
+				MPos = CFrame.new(295, 73, -56);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Vampire Fang" then
+
+				MMon = { "Vampire" };
+
+				MPos = CFrame.new(-6033, 7, -1317);
+
+				SP = "Default";
+
+			end;
+
+		elseif World3 then
+
+			if SelectMaterial == "Scrap Metal" then
+
+				MMon = { "Jungle Pirate", "Forest Pirate" };
+
+				MPos = CFrame.new(-11975.78515625, 331.77340698242, -10620.030273438);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Fish Tail" then
+
+				MMon = { "Fishman Raider", "Fishman Captain" };
+
+				MPos = CFrame.new(-10993, 332, -8940);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Conjured Cocoa" then
+
+				MMon = { "Chocolate Bar Battler", "Cocoa Warrior" };
+
+				MPos = CFrame.new(620.63446044922, 78.936447143555, -12581.369140625);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Dragon Scale" then
+
+				MMon = { "Dragon Crew Archer", "Dragon Crew Warrior" };
+
+				MPos = CFrame.new(6594, 383, 139);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Gunpowder" then
+
+				MMon = { "Pistol Billionaire" };
+
+				MPos = CFrame.new(-84.855690002441, 85.620613098145, 6132.0087890625);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Mini Tusk" then
+
+				MMon = { "Mythological Pirate" };
+
+				MPos = CFrame.new(-13545, 470, -6917);
+
+				SP = "Default";
+
+			elseif SelectMaterial == "Demonic Wisp" then
+
+				MMon = { "Demonic Soul" };
+
+				MPos = CFrame.new(-9495.6806640625, 453.58624267578, 5977.3486328125);
+
+				SP = "Default";
+
+			end;
+
+		end;
+
+	end;
+
+QuestNeta = function()
+
+		local I = QuestCheck();
+
+		return {
+
+			[1] = Mon,
+
+			[2] = Qdata,
+
+			[3] = Qname,
+
+			[4] = PosM,
+
+			[5] = NameMon,
+
+			[6] = PosQ,
+
+		};
+
+	end;
