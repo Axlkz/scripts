@@ -22,60 +22,55 @@ MaterialMon = function()
 
 		if World1 then
 
-			if SelectMaterial == "Angel Wings" then
+    if SelectMaterial == "Angel Wings" then
 
-				MMon = {
+        MMon = {
+            "Shanda",
+            "Royal Squad",
+            "Royal Soldier",
+            "Wysper",
+            "Thunder God",
+        };
 
-						"Shanda",
+        MPos = CFrame.new(-4698, 845, -1912);
 
-						"Royal Squad",
+        SP = "Default";
 
-						"Royal Soldier",
+        local I = Vector3.new(-4607.82275, 872.54248, -1667.55688);
 
-						"Wysper",
+        shouldRequestEntrance(I, 10000);
 
-						"Thunder God",
+    elseif SelectMaterial == "Leather + Scrap Metal" then
 
-					};
+        MMon = { "Brute", "Pirate" };
 
-				MPos = CFrame.new(-4698, 845, -1912);
+        MPos = CFrame.new(-1256.711, 75.297, 4193.718);
 
-				SP = "Default";
+        SP = "Default";
 
-				local I = Vector3.new(-4607.82275, 872.54248, -1667.55688);
+    elseif SelectMaterial == "Magma Ore" then
 
-				shouldRequestEntrance(I, 10000);
+        MMon = { "Military Soldier", "Military Spy", "Magma Admiral" };
 
-			elseif SelectMaterial == "Leather + Scrap Metal" then
+        MPos = CFrame.new(-5815, 84, 8820);
 
-				MMon = { "Brute", "Pirate" };
+        SP = "Default";
 
-				MPos = CFrame.new(-1145, 15, 4350);
+    elseif SelectMaterial == "Fish Tail" then
 
-				SP = "Default";
+        MMon = { "Fishman Warrior", "Fishman Commando", "Fishman Lord" };
 
-			elseif SelectMaterial == "Magma Ore" then
+        MPos = CFrame.new(61123, 19, 1569);
 
-				MMon = { "Military Soldier", "Military Spy", "Magma Admiral" };
+        SP = "Default";
 
-				MPos = CFrame.new(-5815, 84, 8820);
+        local I = Vector3.new(61163.8515625, 5.342342376709, 1819.7841796875);
 
-				SP = "Default";
+        shouldRequestEntrance(I, 17000);
 
-			elseif SelectMaterial == "Fish Tail" then
+    end;
 
-				MMon = { "Fishman Warrior", "Fishman Commando", "Fishman Lord" };
-
-				MPos = CFrame.new(61123, 19, 1569);
-
-				SP = "Default";
-
-				local I = Vector3.new(61163.8515625, 5.342342376709, 1819.7841796875);
-
-				shouldRequestEntrance(I, 17000);
-
-			end;
-
+end;
 		elseif World2 then
 
 			if SelectMaterial == "Leather + Scrap Metal" then
