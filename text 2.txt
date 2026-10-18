@@ -1,3 +1,18 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+task.wait(1.5)
+
+if player.Team == nil then
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+    end)
+end
+
+task.wait(2)
+
 local v = "https://raw.githubusercontent.com/Axlkz/scripts/refs/heads/main/Utilities/"
 
 local function f(p, p2)
@@ -663,6 +678,115 @@ local v96 = {
 }
 
 local v97 = v7.Options
+
+-- Home: update logs and player feedback
+do
+    v96.Home:AddParagraph({
+        Title = "Update Logs",
+        Content = "• Fixed Auto Collect Berry\n• Fixed Auto Farm Ectoplasm"
+    })
+
+    v96.Home:AddSection("Ratings & Feedback")
+
+    local feedbackType = "Feedback"
+    local feedbackText = ""
+
+    -- Replace these placeholders with regenerated Discord webhook URLs.
+    local feedbackWebhook = "https://discord.com/api/webhooks/1561478657292111905/nQpsJpDfK0e2XCtz7iWSDtTxwa_Hdop2TiHnb2q3rdjr9MARUpBjILb_un6QLHNffBUf"
+    local bugWebhook = "https://discord.com/api/webhooks/1561478572391006278/KRPR7MB0sqMwbjqfk9b3dxz19e1pR5sxxcez-brgn4jk8_zd1lbrh17BWjdas8XPtq8S"
+    local mentionUserId = "1523000040182906951"
+
+    local feedbackAvatar = "https://cdn.discordapp.com/attachments/1561416819737370685/1561481352862376016/IMG_a76a0e71-2964-4bfe-817b-4495b6c8a35c.jpg?ex=6ad68255&is=6ad530d5&hm=7fb72eba96ea6c8e13ae12a3245682f70a5a4fdf205f41ab0eef282370081590&"
+    local bugAvatar = "https://cdn.discordapp.com/attachments/1561416410217971794/1561479190010929293/638429e9-b56c-4f6d-a729-79ccee7601f7.jpg?ex=6ad68051&is=6ad52ed1&hm=2ac4279bf5fb29e59ff612c0a569a7e7029f75cad7106159a76147a2f1d9a556&"
+
+    v96.Home:AddDropdown("HomeFeedbackType", {
+        Title = "Message Type",
+        Description = "Choose what you want to send",
+        Values = { "Feedback", "Bug Report" },
+        Multi = false,
+        Default = 1,
+    }):OnChanged(function(value)
+        feedbackType = value or "Feedback"
+    end)
+
+    v96.Home:AddInput("HomeFeedbackText", {
+        Title = "Your Message",
+        Description = "Write your rating, suggestion, or bug report",
+        Default = "",
+        Placeholder = "Type your message here...",
+        Numeric = false,
+        Finished = false,
+    }):OnChanged(function(value)
+        feedbackText = tostring(value or "")
+    end)
+
+    v96.Home:AddButton({
+        Title = "Submit Message",
+        Description = "Send your feedback or bug report to the developers",
+        Callback = function()
+            local message = feedbackText:gsub("^%s+", ""):gsub("%s+$", "")
+            if message == "" then
+                v7:Notify({ Title = "Ratings & Feedback", Content = "Please write a message first.", Duration = 4 })
+                return
+            end
+
+            local isBug = feedbackType == "Bug Report"
+            local webhook = isBug and bugWebhook or feedbackWebhook
+            if webhook == "PASTE_NEW_FEEDBACK_WEBHOOK_HERE" or webhook == "PASTE_NEW_BUG_WEBHOOK_HERE" then
+                v7:Notify({ Title = "Ratings & Feedback", Content = "Set the Discord webhook URL in the script first.", Duration = 5 })
+                return
+            end
+
+            local req = request or http_request or (syn and syn.request)
+            if not req then
+                v7:Notify({ Title = "Ratings & Feedback", Content = "HTTP requests are not supported by this executor.", Duration = 5 })
+                return
+            end
+
+            local months = {
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            }
+            local now = os.date("!*t")
+            local dateTime = string.format("%02d %s %04d | %02d:%02d UTC",
+                now.day, months[now.month], now.year, now.hour, now.min)
+
+            -- Avoid letting user text break the Discord code block.
+            message = message:gsub("`", "'")
+            local payload = {
+                username = isBug and "Bug Reports" or "Feedback",
+                avatar_url = isBug and bugAvatar or feedbackAvatar,
+                content = "<@" .. mentionUserId .. ">",
+                allowed_mentions = { parse = {}, users = { mentionUserId } },
+                embeds = {{
+                    color = 0xFF69B4,
+                    fields = {{
+                        name = isBug and "Bug" or "Feedback",
+                        value = "```" .. message:sub(1, 3900) .. "```",
+                        inline = false
+                    }},
+                    footer = { text = dateTime }
+                }}
+            }
+
+            local ok, response = pcall(function()
+                return req({
+                    Url = webhook,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = v16:JSONEncode(payload)
+                })
+            end)
+
+            if ok and response and response.StatusCode >= 200 and response.StatusCode < 300 then
+                v7:Notify({ Title = "Ratings & Feedback", Content = "Your message was sent successfully!", Duration = 5 })
+            else
+                warn("Axl Hub feedback request failed:", ok and response and response.StatusCode or response)
+                v7:Notify({ Title = "Ratings & Feedback", Content = "Could not send the message. Check the webhook URL.", Duration = 5 })
+            end
+        end
+    })
+end
 
 do
     v96.Main:AddSection("Farming System")
@@ -5268,6 +5392,30 @@ do
     v428:OnChanged(function(p113)
         _G.RemoveDamage = p113
     end)
+end
+
+do
+    getgenv().AutoExecute = false
+
+    v96.Misc:AddToggle("AutoExecute", {
+        Title = "Auto Execute",
+        Description = "Runs the script again automatically when you teleport or hop servers",
+        Default = false
+    }):OnChanged(function(p)
+        getgenv().AutoExecute = p
+    end)
+
+    local queue = (syn and syn.queue_on_teleport) or queue_on_teleport or queueteleport
+    local executed = false
+
+    if queue then
+        v21.OnTeleport:Connect(function()
+            if getgenv().AutoExecute and not executed then
+                executed = true
+                queue([[loadstring(game:HttpGet("https://raw.githubusercontent.com/Axlkz/scripts/refs/heads/main/text%202.txt"))()]])
+            end
+        end)
+    end
 end
 
 do
