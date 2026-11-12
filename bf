@@ -1,8 +1,7 @@
 --[[
 This script was made with Claude, so I'm keeping it open-source.
-You can use parts of it, but if possible, please don't just change the name and claim it's yours 🙂
+You can use parts of it, but if possible, please don't just change the name and claim it's yours. 🙂
 ]]
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -477,7 +476,7 @@ local function guardToggle(value2, value3, value4, value5)
         if toggleDebounce[value2] then return end
 
         if value6 == true and not value3 then
-            
+
             if farmPaused then return end
 
             Fluent:Notify({ Title = "Axl Hub", Content = value4, Duration = 5 })
@@ -652,7 +651,6 @@ pcall(function()
     end
 end)
 
--- Botão circular para abrir/fechar a UI
 do
     local BUTTON_SIZE = 38
 
@@ -695,7 +693,6 @@ do
 
     button.ClipsDescendants = false
 
-    -- Base: preto com curvas suaves de vermelho
     local baseGradient = Instance.new("UIGradient")
     baseGradient.Rotation = 50
     baseGradient.Color = ColorSequence.new({
@@ -707,7 +704,6 @@ do
     })
     baseGradient.Parent = button
 
-    -- Curva vermelha (círculo dentro do botão, sem passar da borda)
     local swirl = Instance.new("Frame")
     swirl.Name = "Swirl"
     swirl.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -729,7 +725,6 @@ do
     })
     swirlGradient.Parent = swirl
 
-    -- Brilho bem sutil
     local gloss = Instance.new("Frame")
     gloss.Name = "Gloss"
     gloss.AnchorPoint = Vector2.new(0.5, 0)
@@ -758,7 +753,6 @@ do
         end
     end
 
-    -- Arrastar + clicar (diferencia clique de arrasto)
     local UserInputService = game:GetService("UserInputService")
     local dragging, dragStart, startPos, moved = false, nil, nil, false
 
@@ -1005,7 +999,6 @@ do
         local CollectionService = game:GetService("CollectionService")
         local visited = {}
 
-        -- tween ate o ponto (tween do proprio script) e espera chegar perto
         local function goTo(cframe, closeEnough, maxTime)
             local startTime = tick()
             repeat
@@ -1026,7 +1019,6 @@ do
 
         local VirtualInputManager = game:GetService("VirtualInputManager")
 
-        -- posicao real do prompt (onde o "E" aparece)
         local function promptCFrame(prompt, fallback)
             local parent = prompt.Parent
             if parent then
@@ -1041,7 +1033,6 @@ do
             return prompt.Parent ~= nil and prompt:IsDescendantOf(Workspace) and prompt.Enabled
         end
 
-        -- coleta a berry: chega no prompt e tenta varios jeitos de apertar o "E"
         local function collectBerry(berry)
             local prompt = berry:FindFirstChildWhichIsA("ProximityPrompt", true)
             local clicker = berry:FindFirstChildWhichIsA("ClickDetector", true)
@@ -1057,13 +1048,11 @@ do
                     prompt.MaxActivationDistance = math.max(prompt.MaxActivationDistance, 30)
                 end)
 
-                -- 1) funcao do executor
                 if fireproximityprompt then
                     pcall(fireproximityprompt, prompt)
                     task.wait(0.15)
                 end
 
-                -- 2) tecla real do prompt (E) pelo VirtualInputManager
                 if promptStillThere(prompt) then
                     local key = prompt.KeyboardKeyCode
                     if key == Enum.KeyCode.Unknown then key = Enum.KeyCode.E end
@@ -1075,7 +1064,6 @@ do
                     task.wait(0.15)
                 end
 
-                -- 3) clique do client no prompt
                 if promptStillThere(prompt) then
                     pcall(function()
                         prompt:InputHoldBegin()
@@ -1093,7 +1081,6 @@ do
             task.wait(0.1)
         end
 
-        -- alvos: cada berry individual (e arbustos sem berry carregada, para chegar perto)
         local function getBerryTargets()
             local rootPart = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
             local entries = {}
@@ -1131,7 +1118,6 @@ do
             return entries
         end
 
-        -- usado pelo sistema de prioridades: tem berry para coletar agora?
         local berryCache, berryCacheTime = false, 0
         _G.AxlBerryHasWork = function()
             if tick() - berryCacheTime > 0.5 then
@@ -1145,7 +1131,7 @@ do
         while task.wait(0.1) do
             if _G.AutoBerry then
                 pcall(function()
-                    -- sempre vai na berry MAIS PROXIMA
+
                     local entries = getBerryTargets()
                     local entry = entries[1]
                     if not entry then return end
@@ -2435,7 +2421,7 @@ do
 
                     local ripindraTrueForm = Workspace.Enemies:FindFirstChild("rip_indra True Form") or value:FindFirstChild("rip_indra True Form")
                     if not ripindraTrueForm then
-                        _G.AxlTushitaDoing = false -- esperando o Rip Indra: libera as prioridades
+                        _G.AxlTushitaDoing = false
                         if not flag then
                             Fluent:Notify({ Title = "Auto Tushita", Content = "Waiting for Rip Indra to spawn", Duration = 5 })
                             flag = true
@@ -2443,7 +2429,7 @@ do
                         return
                     end
                     flag = false
-                    _G.AxlTushitaDoing = true -- fazendo o puzzle das tochas
+                    _G.AxlTushitaDoing = true
 
                     local holyTorch = character:FindFirstChild("Holy Torch") or localPlayer.Backpack:FindFirstChild("Holy Torch")
                     if not holyTorch then
@@ -2572,7 +2558,7 @@ do
                 end
 
                 if amount >= 30 then
-                    _G.AxlYamaState = "katana" -- indo pegar a katana
+                    _G.AxlYamaState = "katana"
                     local farmEliteHunt = Fluent.Options.FarmEliteHunt
                     _G.FarmEliteHunt = farmEliteHunt and farmEliteHunt.Value or false
 
@@ -2603,7 +2589,7 @@ do
                             break
                         end
                     end
-                    _G.AxlYamaState = flag and "elite" or "waiting" -- elite = hunt em andamento
+                    _G.AxlYamaState = flag and "elite" or "waiting"
                     if not flag and tick() - amount3 > 10 then
                         amount3 = tick()
                         Fluent:Notify({ Title = "Auto Yama", Content = "Waiting for Elite Hunter...", Duration = 5 })
@@ -2642,7 +2628,6 @@ do
         end
     end)
 
-    -- Fruits under 1M: taken from your own inventory and used to get the raid chip instead of money
     local cheapFruitPrices = {}
     local function loadFruitPrices()
         pcall(function()
@@ -2658,7 +2643,6 @@ do
         end)
     end
 
-    -- true only for fruits whose price is known and below 1,000,000
     getgenv().AxlIsCheapFruit = function(name)
         if next(cheapFruitPrices) == nil then loadFruitPrices() end
         local price = cheapFruitPrices[name]
@@ -2834,7 +2818,7 @@ do
 
     task.spawn(function()
         local HttpService = game:GetService("HttpService")
-        local SPIN_COOLDOWN = 2 * 60 * 60 -- 2 horas
+        local SPIN_COOLDOWN = 2 * 60 * 60
         local SPIN_FILE = "AxlHub_RandomFruit.json"
         local accountKey = tostring(localPlayer.UserId)
 
@@ -2848,7 +2832,6 @@ do
             Spinner = require(value:WaitForChild("Controllers"):WaitForChild("UI"):WaitForChild("Spinner"))
         end)
 
-        -- ultimo giro por conta (salvo em arquivo; outra conta nao espera)
         local lastSpins = {}
         pcall(function()
             if isfile and isfile(SPIN_FILE) then
@@ -2875,7 +2858,7 @@ do
                 pcall(function()
                     local window = spinnerWindow()
                     if window and window.Enabled then
-                        -- depois de girar, fecha pelo CloseButton
+
                         local closeButton = window.AboveSpinner.Navigation.CloseButton
                         if closeButton.Visible and Spinner then
                             Spinner:Close()
@@ -3005,7 +2988,6 @@ do
     end)
 
 end
-
 
 do
     _G.AutoDungeonFull = false
@@ -4072,7 +4054,6 @@ do
 
     Tabs.Travel:AddSection("Islands")
 
-    -- Ilhas por mar (posicoes fixas)
     local islandData = {}
     if isSea1 then
         islandData = {
@@ -4175,7 +4156,7 @@ do
                 if not _G.TweenIsland then return end
                 local entry = islandData[value2]
                 if typeof(entry) == "table" then
-                    -- posicoes que dependem do mapa carregado (_WorldOrigin.Locations)
+
                     local locations = Workspace:FindFirstChild("_WorldOrigin") and Workspace._WorldOrigin:FindFirstChild("Locations")
                     local location = locations and locations:FindFirstChild(entry.location)
                     entry = location and location.CFrame or nil
@@ -4572,7 +4553,6 @@ getgenv().AxlHopJoin = hopJoin
         })
     end
 
-    
     Tabs.Hop:AddSection("Events")
 
     hopButton("Join Mirage Island Server", "Joins a server with Mirage Island (Sea 3)", isSea3, "Mirage Island only works in Sea 3", "mirage")
@@ -5606,7 +5586,7 @@ do
         localPlayer.OnTeleport:Connect(function()
             if getgenv().AutoExecute and not executed then
                 executed = true
-                queue([[loadstring(game:HttpGet("https://raw.githubusercontent.com/Axlkz/scripts/refs/heads/main/text%202.txt"))()]])
+                queue([[loadstring(game:HttpGet("https://raw.githubusercontent.com/Axlkz/scripts/refs/heads/main/bf"))()]])
             end
         end)
     end
@@ -6131,7 +6111,6 @@ Tabs.Stack:AddToggle("AutoTrueTripleKatana", {
         if not isFarming() then stopFarming() end
     end
 
- 
     if not farmPaused then
         task.defer(function()
             pcall(function() SaveManager:Save("AutoSave") end)
@@ -6291,10 +6270,9 @@ task.spawn(function()
                         end
                     end
                 elseif _G.AutoGrabCheapFruits then
-                    -- fruta abaixo de 1M do proprio inventario em vez de comprar o chip com dinheiro
+
                     local humanoid = character:FindFirstChildOfClass("Humanoid")
 
-                    -- fruta barata ja na mao/mochila
                     local function findCheapTool()
                         for index, container in ipairs({ localPlayer2.Backpack, character }) do
                             for index2, tool in ipairs(container:GetChildren()) do
@@ -6309,7 +6287,6 @@ task.spawn(function()
 
                     local tool = findCheapTool()
 
-                    -- sem fruta barata: descarrega a mais barata do inventario (StorageKey ou Name)
                     if not tool and tick() - (_G.AxlCheapLoadTry or 0) > 3 then
                         _G.AxlCheapLoadTry = tick()
                         if tick() - (_G.AxlFailedReset or 0) > 60 then
@@ -6398,7 +6375,6 @@ end)
 _G.AxlHandleQuest = function(rootPart, npcCFrame, quests, nearDistance, mobStems)
     if not _G.AcceptQuest or not isSea3 then return false end
 
-    -- quest ativa = painel de quest rastreada com o nome de um dos mobs (mesma deteccao do Farm Level)
     local active = false
     pcall(function()
         local text = Players.LocalPlayer.PlayerGui.TrackedQuestFrame.Frame.header.textLabel.textLabel.Text
@@ -6419,7 +6395,7 @@ _G.AxlHandleQuest = function(rootPart, npcCFrame, quests, nearDistance, mobStems
         _tp(npcCFrame)
         return true
     end
-    -- chegou no NPC: espera 1,5s e so entao pega a quest
+
     task.wait(1.5)
     local quest = quests[math.random(1, #quests)]
     value.Remotes.CommF_:InvokeServer("StartQuest", quest[1], quest[2])
@@ -6486,7 +6462,7 @@ task.spawn(function()
             local value2 = other and other.Transparency == 0
             local doughKing = enemies:FindFirstChild("Cake Prince") or enemies:FindFirstChild("Dough King")
             if _G.IgnoreBoss then
-                -- ignora o Katakuri: nao entra no espelho nem luta, so mobs
+
                 doughKing = nil
                 value2 = false
             end
@@ -6749,14 +6725,13 @@ do
         return nil
     end
 
-    -- Submerged Island (level 2600+): quest NPCs e mobs fixos
     local SUBMERGED_TRAVEL_CF = CFrame.new(-16269.7041, 25.2288494, 1373.65955, 0.997390985, 1.47309942e-09, -0.0721890926, -4.00651912e-09, 0.99999994, -2.51183763e-09, 0.0721890852, 5.75363091e-10, 0.997390926)
     local SUBMERGED_Q1_NPC = CFrame.new(10778.875, -2087.72437, 9265.18359, 0.934615612, -9.33109447e-08, -0.355659455, 9.17655143e-08, 1, -2.12154276e-08, 0.355659455, -1.28090019e-08, 0.934615612)
     local SUBMERGED_Q2_NPC = CFrame.new(10880.6855, -2086.20044, 10032.624, -0.321384728, 9.87648434e-08, -0.946948707, 7.13271007e-08, 1, 8.00902953e-08, 0.946948707, -4.18033075e-08, -0.321384728)
     local SUBMERGED_Q3_NPC = CFrame.new(9640.08789, -1992.44507, 9613.65234, -0.957327187, 4.11991223e-08, 0.289006323, 1.5775445e-08, 1, -9.02985846e-08, -0.289006323, -8.18860855e-08, -0.957327187)
 
     local function levelSubmergedQuest(level)
-        -- { mob, questId, questName, mobSpawnCF, mobName, questNpcCF }
+
         if level >= 2725 then
             return { "Grand Devotee", 2, "SubmergedQuest3", CFrame.new(9611.70508, -1993.47119, 9882.68848, -0.591375351, 4.14332426e-08, -0.806396425, 4.73774868e-08, 1, 1.66361875e-08, 0.806396425, -2.83668058e-08, -0.591375351), "Grand Devotee", SUBMERGED_Q3_NPC }
         elseif level >= 2700 then
@@ -6954,7 +6929,6 @@ do
                 local v683 = v679[4]
                 local v684 = v679[5]
 
-                -- Submerged Island: vai ate o ponto de travel primeiro, viaja, depois farma
                 if tostring(v680):find("^SubmergedQuest") and v679[6] and (v679[6].Position - v678.Position).Magnitude > 10000 then
                     _tp(SUBMERGED_TRAVEL_CF)
                     task.wait(2)
@@ -7316,7 +7290,6 @@ task.spawn(function()
     end
 end)
 
--- ===== Fast Attack (melee/sword) =====
 task.spawn(function()
     local Players = game:GetService("Players")
     local RS = game:GetService("ReplicatedStorage")
@@ -7537,7 +7510,6 @@ task.spawn(function()
         table.clear(hits)
     end
 
-    -- loop principal (respeita os toggles do hub)
     while true do
         if _G.FastAttackEnabled and _G.OtherAutoAttack and isFarming(true) then
             pcall(function()
@@ -7547,7 +7519,6 @@ task.spawn(function()
                 if _G.MasteryFinish then return end
                 local want = _G.MasteryWeapon or _G.SelectWeapon
 
-                -- so equipa a arma quando tem mob no alcance
                 if isFarming(true) and not _G.AutoMasterySwords and not _G.AutoTtk then
                     local tool0 = character:FindFirstChildOfClass("Tool")
                     local wt0 = tool0 and (tool0:GetAttribute("WeaponType") or tool0.ToolTip)
@@ -7558,11 +7529,11 @@ task.spawn(function()
                 end
 
                 local tool = character:FindFirstChildOfClass("Tool")
-                if not tool then return end -- sem arma na mao = nao ataca
+                if not tool then return end
 
                 if not _G.OtherDoubleAttack then
                     local wt = tool:GetAttribute("WeaponType") or tool.ToolTip
-                    -- fruta/arma de fogo sao tratadas pelos outros loops
+
                     if wt ~= "Melee" and wt ~= "Sword" then return end
                 end
                 if want == "Fruit" and not _G.AutoTtk and not _G.OtherDoubleAttack then return end
@@ -7650,9 +7621,6 @@ task.spawn(function()
         end
     end
 
-    -- Gas-Gas M1: dispara em cada mob no alcance (dir, 1) + tiro cego se nao houver alvo.
-    -- Leve: a lista de alvos e atualizada a cada 0.1s (nao a cada disparo) e o numero de
-    -- disparos por ciclo tem teto, sem perder velocidade de ataque.
     local GAS_RANGE = 100
     local GAS_MAX_TARGETS = 6
     local gasParts, gasHumanoids, gasScanned, gasIndex = {}, {}, 0, 0
@@ -7682,8 +7650,6 @@ task.spawn(function()
         end
     end
 
-    -- 1 disparo por ciclo (igual ao caso de 1 mob, que funciona), alternando entre os alvos.
-    -- Varios disparos no mesmo instante com a mesma direcao faziam o Gas nao acertar.
     local function helperGas(tool)
         local leftClickRemote = tool:FindFirstChild("LeftClickRemote")
         if not leftClickRemote or not waitForChild then return end
@@ -8125,7 +8091,7 @@ BringEnemy = function()
     if not enemies then
         return;
     end;
-    -- Farm Level: junta SOMENTE o mob da quest atual. Outros modos: junta todos os mobs
+
     local targetName = nil;
     if _G.Level then
         targetName = _G.LevelQuestMobName;
@@ -8133,7 +8099,7 @@ BringEnemy = function()
             return;
         end;
     end;
-    -- candidatos: mobs vivos no alcance (filtra boss / tipo do alvo no Farm Level)
+
     local candidates = {};
     for index, item in ipairs(enemies:GetChildren()) do
         if helper(item) then
@@ -8151,14 +8117,14 @@ BringEnemy = function()
             end;
         end;
     end;
-    -- trava: so os 3 mobs mais proximos do ponto (os ja juntados contam nos 3)
+
     table.sort(candidates, function(first, second)
         return first.distance < second.distance;
     end);
     for index = 1, math.min(#candidates, BRING_MAX_MOBS) do
         local entry = candidates[index];
         local rootPart2, humanoid = entry.root, entry.humanoid;
-        -- preparacao so uma vez por mob (pesado)
+
         if not rootPart2:FindFirstChild("LockMob") then
             local bodyVelocity = Instance.new("BodyVelocity");
             bodyVelocity.Parent = rootPart2;
@@ -8178,8 +8144,7 @@ BringEnemy = function()
         end;
         humanoid.WalkSpeed = 0;
         humanoid.JumpPower = 0;
-        -- so move o mob se o client for o dono dele; sem isso o servidor nao
-        -- ve a mudanca e o dano nao registra (mob "travado")
+
         if entry.distance > 5 then
             if type(isnetworkowner) == "function" then
                 if isnetworkowner(rootPart2) then
@@ -8522,9 +8487,6 @@ do
 
     list3.EquipBait = helper7
 
-    -- Keeps the selected bait equipped whenever a rod is in hand, even with
-    -- Auto Fishing off, so a normal click to cast doesn't trigger
-    -- "You need bait equipped to fish!"
     task.spawn(function()
         while task.wait(.3) do
             if not farmPaused and not _G.AutoFishing then
@@ -8966,17 +8928,7 @@ Fluent:Notify({
 })
 
 task.spawn(function()
--- =====================================================================
--- SISTEMA DE PRIORIDADES
--- Ordem (maior -> menor): Rip Indra, Soul Reaper, Darkbeard, Cursed Captain,
--- Raid Pirate, Factory, Elite Hunter, Fruit, Berry. Todos os outros farms
--- (Level, Bone, Material, 600 Sword etc.) ficam abaixo de todos.
--- Tushita/Yama: se ja estao FAZENDO algo, vao primeiro; se estao esperando, as
--- prioridades acima rodam.
--- Quando uma tarefa prioritaria tem algo para fazer (fruta spawnou, berry,
--- boss vivo...), os farms de menor prioridade sao pausados, a tarefa roda e
--- depois eles voltam sozinhos.
--- =====================================================================
+
 do
     local GLOBAL_G, GLOBAL_GENV = 1, 2
     local function flag(kind, name)
@@ -9001,7 +8953,6 @@ do
         "Sea Soldier", "Water Fighter",
     }
 
-    -- kind "trigger": nao se move quando esta ocioso | "camp": fica parado/andando no local mesmo ocioso
     local tasks = {
         { name = "Berry", kind = "trigger", limit = 45, flags = { flag(GLOBAL_G, "AutoBerry") },
             busy = function() return _G.AxlBerryHasWork ~= nil and _G.AxlBerryHasWork() end },
@@ -9049,7 +9000,6 @@ do
 
     local eliteKey = flag(GLOBAL_G, "FarmEliteHunt").key
 
-    -- farms comuns: sempre abaixo de todas as tarefas acima
     local baseFlags = {
         flag(GLOBAL_G, "StartFarm"), flag(GLOBAL_GENV, "AutoMaterial"), flag(GLOBAL_G, "AutoRaid"),
         flag(GLOBAL_G, "AutoBoss"), flag(GLOBAL_G, "FarmAllBoss"), flag(GLOBAL_G, "AutoMasterySwords"),
@@ -9064,8 +9014,6 @@ do
         for index2, spec in ipairs(task2.flags) do allSpecs[#allSpecs + 1] = spec end
     end
 
-    -- pausa = valor vira nil; se o usuario mexer no toggle enquanto pausado, o valor deixa de ser nil
-    -- e a nossa copia e descartada (respeita o que o usuario fez)
     local saved = {}
     local blacklist = {}
     local holderName, holderSince = nil, 0
@@ -9127,7 +9075,6 @@ do
                 return
             end
 
-            -- Tushita/Yama ja FAZENDO algo: vao primeiro (esperando = libera as prioridades)
             local exclusive = nil
             if _G.AutoTushita and _G.AxlTushitaDoing then
                 exclusive = {}
@@ -9135,7 +9082,7 @@ do
                 if _G.AxlYamaState == "katana" then
                     exclusive = {}
                 elseif _G.AxlYamaState == "elite" then
-                    exclusive = { [eliteKey] = true } -- o Elite Hunter e quem mata o boss para a Yama
+                    exclusive = { [eliteKey] = true }
                 end
             end
             if exclusive then
@@ -9144,7 +9091,6 @@ do
                 return
             end
 
-            -- tarefa prioritaria mais alta que tem algo para fazer agora
             local holder = nil
             for index, task2 in ipairs(tasks) do
                 local blocked = blacklist[task2.name] and tick() < blacklist[task2.name]
@@ -9160,7 +9106,7 @@ do
                     holderName = holder.name
                     holderSince = tick()
                 end
-                -- Berry/Fruit que nao termina em 45s (alvo inalcancavel): libera os outros por 60s
+
                 if holder.limit and tick() - holderSince > holder.limit then
                     blacklist[holder.name] = tick() + 60
                     holderName = nil
@@ -9180,7 +9126,7 @@ do
                         if task2.kind == "trigger" then
                             for index2, spec in ipairs(task2.flags) do runSet[spec.key] = true end
                         elseif not baseActive and not campChosen and taskWanted(task2) then
-                            -- sem farm comum ligado: a tarefa "camp" de maior prioridade fica parada no local
+
                             campChosen = true
                             for index2, spec in ipairs(task2.flags) do runSet[spec.key] = true end
                         end
