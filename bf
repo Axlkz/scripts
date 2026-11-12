@@ -54,7 +54,7 @@ local function loadRemote(p, value)
 end
 
 local libraryUrls = {
-    "https://pastefy.app/H98y1yaY/raw",
+    "https://pastefy.app/yntfqpyZ/raw",
     "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua",
     "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua",
 }
