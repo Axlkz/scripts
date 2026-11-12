@@ -1,3 +1,8 @@
+--[[
+This script was made with Claude, so I'm keeping it open-source.
+You can use parts of it, but if possible, please don't just change the name and claim it's yours 🙂
+]]
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
