@@ -308,6 +308,7 @@ local function isFarming(combatOnly)
     if _G.AutoHytHallow then return true end
     if _G.AutoMasterySwords then return true end
     if _G.FarmMastery_Dev or _G.FarmMastery_G then return true end
+    if _G.SeaFarm2 or _G.SeaFarm3 then return true end
     if _G.AutoTushita then return true end
     if _G.AutoYama then return true end
     if not combatOnly and (_G.AutoAfkJoinFruit or _G.AutoCollectFruit or _G.AutoBerry) then return true end
@@ -806,6 +807,7 @@ local Tabs = {
     Raid = Window:AddTab({ Title = "Raid/Fruit", Icon = "rbxassetid://10709790875" }),
     Dungeon = Window:AddTab({ Title = "Dungeon", Icon = "rbxassetid://10734975692" }),
     Fish = Window:AddTab({ Title = "Fish", Icon = "rbxassetid://127664059821666" }),
+    Sea = Window:AddTab({ Title = "Sea Event", Icon = "rbxassetid://10747376931" }),
     Hop = Window:AddTab({ Title = "Hop", Icon = "rbxassetid://10734975486" }),
     Travel = Window:AddTab({ Title = "Travel", Icon = "rbxassetid://10734886004" }),
     LocalPlayer = Window:AddTab({ Title = "Local Player", Icon = "rbxassetid://98870151777863" }),
@@ -1411,12 +1413,13 @@ do
         setreadonly(mt, false)
         local old = mt.__namecall
         mt.__namecall = newcclosure(function(self, ...)
-            if not masteryAim then return old(self, ...) end
+            local aim = masteryAim or _G.SeaAim
+            if not aim then return old(self, ...) end
             local method = getnamecallmethod()
             if method == "FireServer" or method == "InvokeServer" then
                 local args = table.pack(...)
                 if typeof(args[1]) == "Vector3" then
-                    args[1] = masteryAim
+                    args[1] = aim
                     return old(self, table.unpack(args, 1, args.n))
                 end
             end
@@ -5389,6 +5392,33 @@ do
         _G.RaceClickAutov4 = Options.AutoV4.Value
     end)
 
+    Tabs.Misc:AddSection("Other Settings")
+
+    local autoKenToggle = Tabs.Misc:AddToggle("AutoKen", {
+        Title = "Auto Active Ken",
+        Description = "Automatically activate Observation Haki",
+        Default = false
+    })
+
+    autoKenToggle:OnChanged(function()
+        _G.AutoKen = Options.AutoKen.Value
+    end)
+
+    task.spawn(function()
+        local CollectionService = game:GetService("CollectionService")
+        local commE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
+        while task.wait(0.2) do
+            if _G.AutoKen then
+                local char = Players.LocalPlayer.Character
+                if char and CollectionService:HasTag(char, "Ken") then
+                    pcall(function()
+                        commE:FireServer("Ken", true)
+                    end)
+                end
+            end
+        end
+    end)
+
     Tabs.Misc:AddSection("Performance")
 
     Tabs.Misc:AddToggle("FpsBoost", {
@@ -7517,7 +7547,7 @@ task.spawn(function()
                 if not character or not character:FindFirstChild("HumanoidRootPart") then return end
                 if _G.UseDragonstorm and not _G.AutoTtk then return end
                 if _G.MasteryFinish then return end
-                local want = _G.MasteryWeapon or _G.SelectWeapon
+                local want = _G.MasteryWeapon or _G.SeaWeapon or _G.SelectWeapon
 
                 if isFarming(true) and not _G.AutoMasterySwords and not _G.AutoTtk then
                     local tool0 = character:FindFirstChildOfClass("Tool")
@@ -8074,6 +8104,9 @@ end;
 BringEnemy = function()
     local BRING_MAX_MOBS = 3;
     if not bringMobsEnabled then
+        return;
+    end;
+    if _G.SeaFarm2 or _G.SeaFarm3 then
         return;
     end;
     if not lockedPosition then
@@ -8748,6 +8781,1089 @@ do
         end)
     end)
 end
+
+do
+    local VIM = game:GetService("VirtualInputManager")
+    local RunService = game:GetService("RunService")
+    local seaRemote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_")
+
+    local seaOk = isSea2 or isSea3
+    local seaMode = "skills"
+    local seaLock = false
+    local seaWantsDragon = false
+    local seaBoatName = nil
+    local seaLevel = "Lv 1"
+    local seaKeys = {}
+    local seaSkills = { Melee = {}, Sword = {}, Gun = {}, ["Blox Fruit"] = {} }
+    local seaBoat = nil
+    local seaArrived = false
+    local seaHadBoat = false
+    local seaCurrent = nil
+    local seaCurrentKey = nil
+    local seaRaise = 0
+    local seaStuckCount = 0
+    local seaStuckUntil = 0
+    local seaLastExpected = nil
+    local lastClick = 0
+    local lastShot = 0
+    local SEA_SPEED = 170
+    local BOAT_SPEED = 350
+    local seaAllIndex = 1
+    local levelOrder = { "Lv 1", "Lv 2", "Lv 3", "Lv 4", "Lv 5", "Lv 6", "Lv Infinite" }
+    _G.SeaSafeMode = false
+
+    local boatList = {
+        "Guardian",
+        "PirateGrandBrigade",
+        "MarineGrandBrigade",
+        "PirateBrigade",
+        "MarineBrigade",
+        "PirateSloop",
+        "MarineSloop",
+        "Beast Hunter",
+    }
+
+    local labelKeys2 = {
+        ["Ships"] = "Ships2",
+        ["Sea Beast"] = "SeaBeast",
+        ["Shark"] = "Shark",
+        ["Piranha"] = "Piranha",
+    }
+    local labelKeys3 = {
+        ["Sea Beast"] = "SeaBeast",
+        ["Pirate Brigade"] = "PirateBrigade",
+        ["Shark"] = "Shark",
+        ["Terror Shark"] = "TerrorShark",
+        ["Piranha"] = "Piranha",
+        ["Fish Crew"] = "FishCrew",
+        ["Haunted Crew"] = "HauntedCrew",
+        ["Fish Boat"] = "FishBoat",
+    }
+    local labelKeys = isSea2 and labelKeys2 or labelKeys3
+
+    local seaTargetDefs = {
+        Shark = { kind = "mob", names = { "Shark" } },
+        Piranha = { kind = "mob", names = { "Piranha" } },
+        TerrorShark = { kind = "mob", names = { "Terrorshark" }, killType = "sea" },
+        FishCrew = { kind = "mob", names = { "Fish Crew Member" } },
+        HauntedCrew = { kind = "mob", names = { "Haunted Crew Member" } },
+        SeaBeast = { kind = "beast" },
+        Ships2 = { kind = "ship", names = { "PirateBrigade", "PirateGrandBrigade", "MarineBrigade", "MarineGrandBrigade" } },
+        PirateBrigade = { kind = "ship", names = { "PirateBrigade", "PirateGrandBrigade" } },
+        FishBoat = { kind = "ship", names = { "FishBoat" } },
+    }
+
+    local shipOffsets = {
+        PirateBrigade = CFrame.new(0, -30, -10),
+        PirateGrandBrigade = CFrame.new(0, -50, -50),
+        MarineBrigade = CFrame.new(0, -30, -10),
+        MarineGrandBrigade = CFrame.new(0, -50, -50),
+        FishBoat = CFrame.new(0, -50, -25),
+    }
+
+    local boatNpc2 = CFrame.new(-5327.10791, 4.74625063, -714.39856, 0.428315967, 2.35534596e-08, -0.903629005, -4.71714294e-08, 1, 3.70636966e-09, 0.903629005, 4.10379748e-08, 0.428315967)
+    local destination2 = CFrame.new(-9414.80273, -4.3215313, 2379.2959, -0.69609648, 5.83368909e-11, -0.717948258, 2.51885318e-11, 1, 5.6833125e-11, 0.717948258, 2.14772766e-11, -0.69609648)
+    local boatNpc3 = CFrame.new(-16927.451, 9.086, 433.864)
+
+    local levelDestinations = {
+        ["Lv 1"] = CFrame.new(-21998.375, 30.0006084, -682.309143),
+        ["Lv 2"] = CFrame.new(-26779.5215, 30.0005474, -822.858032),
+        ["Lv 3"] = CFrame.new(-31171.957, 30.0001011, -2256.93774),
+        ["Lv 4"] = CFrame.new(-34054.6875, 30.2187767, -2560.12012),
+        ["Lv 5"] = CFrame.new(-38887.5547, 30.0004578, -2162.99023),
+        ["Lv 6"] = CFrame.new(-44541.7617, 30.0003204, -1244.8584),
+        ["Lv Infinite"] = CFrame.new(-10000000, 31, 37016.25),
+    }
+
+    local function seaFarmOn()
+        return _G.SeaFarm2 or _G.SeaFarm3
+    end
+
+    local function toSet(p)
+        local out = {}
+        if type(p) == "table" then
+            for k, v in pairs(p) do
+                if type(k) == "number" then
+                    out[v] = true
+                elseif v then
+                    out[k] = true
+                end
+            end
+        end
+        return out
+    end
+
+    local function waterLevel()
+        local map = Workspace:FindFirstChild("Map")
+        local plane = map and map:FindFirstChild("WaterBase-Plane")
+        return plane and plane.Position.Y or nil
+    end
+
+    local function pressKey(key)
+        _G.AxlKeyGuard = (_G.AxlKeyGuard or 0) + 1
+        task.delay(0.6, function()
+            _G.AxlKeyGuard = math.max((_G.AxlKeyGuard or 1) - 1, 0)
+        end)
+        pcall(function()
+            VIM:SendKeyEvent(true, Enum.KeyCode[key], false, game)
+            task.wait(0.05)
+            VIM:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+        end)
+    end
+
+    local function equipTip(tip)
+        local character = localPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return nil end
+        local tool = character:FindFirstChildOfClass("Tool")
+        if tool and tool.ToolTip == tip then return tool end
+        for index, item in ipairs(localPlayer.Backpack:GetChildren()) do
+            if item:IsA("Tool") and item.ToolTip == tip then
+                humanoid:EquipTool(item)
+                task.wait(0.15)
+                if item.Parent == character then return item end
+                return nil
+            end
+        end
+        return nil
+    end
+
+    local function holdDragonstorm()
+        local character = localPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return nil end
+        local tool = character:FindFirstChild("Dragonstorm")
+        if tool then return tool end
+        local item = localPlayer.Backpack:FindFirstChild("Dragonstorm")
+        if item then
+            humanoid:EquipTool(item)
+            task.wait(0.1)
+            return character:FindFirstChild("Dragonstorm")
+        end
+        return nil
+    end
+
+    local function hasDragonstorm()
+        local character = localPlayer.Character
+        if (character and character:FindFirstChild("Dragonstorm")) or localPlayer.Backpack:FindFirstChild("Dragonstorm") then
+            return true
+        end
+        pcall(function()
+            seaRemote:InvokeServer("LoadItem", "Dragonstorm")
+        end)
+        task.wait(1)
+        character = localPlayer.Character
+        return ((character and character:FindFirstChild("Dragonstorm")) or localPlayer.Backpack:FindFirstChild("Dragonstorm")) ~= nil
+    end
+
+    local function useSkillSet(kind, aim)
+        local keys = seaSkills[kind]
+        if not keys then return end
+        local order = { "Z", "X", "C", "V", "F" }
+        local any = false
+        for index, key in ipairs(order) do
+            if keys[key] then
+                any = true
+                break
+            end
+        end
+        if not any then return end
+        local tool = equipTip(kind)
+        if not tool then return end
+        for index, key in ipairs(order) do
+            if keys[key] then
+                _G.SeaAim = aim
+                pressKey(key)
+                task.wait(0.05)
+            end
+        end
+        _G.SeaAim = nil
+    end
+
+    local function fruitClick()
+        equipWeaponType("Fruit")
+    end
+
+    local function dragonShot(part)
+        local tool = holdDragonstorm()
+        local shoot = getgenv().AxlGunShoot
+        if not tool or not shoot or not part then return end
+        if tick() - lastShot < 0.05 then return end
+        lastShot = tick()
+        pcall(shoot, tool, part)
+    end
+
+    local function engage(kind, part, aim)
+        local dragon = seaMode == "dragon" or (seaMode == "combo" and kind == "ship")
+        seaWantsDragon = dragon
+        if dragon then
+            dragonShot(part)
+        elseif seaMode == "fruit" or seaMode == "combo" then
+            fruitClick()
+        elseif kind ~= "mob" then
+            useSkillSet("Melee", aim)
+            useSkillSet("Sword", aim)
+            useSkillSet("Blox Fruit", aim)
+            useSkillSet("Gun", aim)
+        end
+    end
+
+    local function aliveTargets(def)
+        local out = {}
+        if def.kind == "beast" then
+            local folder = Workspace:FindFirstChild("SeaBeasts")
+            if folder then
+                for index, item in ipairs(folder:GetChildren()) do
+                    local health = item:FindFirstChild("Health")
+                    if item:FindFirstChild("HumanoidRootPart") and health and health.Value > 0 and (not isSea3 or item.Name == "SeaBeast1") then
+                        table.insert(out, item)
+                    end
+                end
+            end
+            return out
+        end
+        local enemies = Workspace:FindFirstChild("Enemies")
+        if not enemies then return out end
+        for index, item in ipairs(enemies:GetChildren()) do
+            if table.find(def.names, item.Name) then
+                if def.kind == "ship" then
+                    local health = item:FindFirstChild("Health")
+                    if item:FindFirstChild("VehicleSeat") and item:FindFirstChild("Engine") and health and health.Value > 0 then
+                        table.insert(out, item)
+                    end
+                else
+                    local humanoid = item:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health > 0 and item:FindFirstChild("HumanoidRootPart") then
+                        table.insert(out, item)
+                    end
+                end
+            end
+        end
+        return out
+    end
+
+    local function hasAlive(key)
+        return #aliveTargets(seaTargetDefs[key]) > 0
+    end
+
+    local function anyActive()
+        for key in pairs(seaKeys) do
+            if hasAlive(key) then return true end
+        end
+        return false
+    end
+
+    local function targetAlive(model, def)
+        if not model or not model.Parent then return false end
+        if def.kind == "mob" then
+            local humanoid = model:FindFirstChild("Humanoid")
+            return humanoid ~= nil and humanoid.Health > 0 and model:FindFirstChild("HumanoidRootPart") ~= nil
+        end
+        local health = model:FindFirstChild("Health")
+        if def.kind == "ship" then
+            return health ~= nil and health.Value > 0 and model:FindFirstChild("Engine") ~= nil and model:FindFirstChild("VehicleSeat") ~= nil
+        end
+        return health ~= nil and health.Value > 0 and model:FindFirstChild("HumanoidRootPart") ~= nil
+    end
+
+    local function nearestTarget()
+        local character = localPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return nil, nil end
+        local bestModel, bestKey, bestDistance = nil, nil, 4500
+        for key in pairs(seaKeys) do
+            local def = seaTargetDefs[key]
+            for index, model in ipairs(aliveTargets(def)) do
+                local part = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Engine")
+                if part then
+                    local distance = (part.Position - rootPart.Position).Magnitude
+                    if distance <= bestDistance then
+                        bestDistance = distance
+                        bestModel = model
+                        bestKey = key
+                    end
+                end
+            end
+        end
+        return bestModel, bestKey
+    end
+
+    local TweenService = game:GetService("TweenService")
+    local seaHoverCF = nil
+    local seaTween = nil
+    local seaTweenGoal = nil
+
+    local function setSeaHover(cf)
+        seaHoverCF = cf
+    end
+
+    RunService.Heartbeat:Connect(function()
+        if not seaHoverCF or not seaFarmOn() then
+            if seaTween then
+                seaTween:Cancel()
+                seaTween = nil
+            end
+            return
+        end
+        local character = localPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+        local distance = (rootPart.Position - seaHoverCF.Position).Magnitude
+        if distance > 250 and isSea2 then
+            if seaTween then
+                seaTween:Cancel()
+                seaTween = nil
+            end
+            rootPart.CFrame = seaHoverCF
+        elseif distance > 6 then
+            local far = distance > 250
+            local threshold = far and 30 or 4
+            if not seaTween or seaTween.PlaybackState ~= Enum.PlaybackState.Playing or (seaTweenGoal.Position - seaHoverCF.Position).Magnitude > threshold then
+                if seaTween then
+                    seaTween:Cancel()
+                end
+                seaTweenGoal = seaHoverCF
+                local duration = far and (distance / SEA_SPEED) or math.clamp(distance / 700, 0.08, 0.35)
+                seaTween = TweenService:Create(rootPart, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = seaHoverCF })
+                seaTween:Play()
+            end
+        else
+            if seaTween then
+                seaTween:Cancel()
+                seaTween = nil
+            end
+            rootPart.CFrame = seaHoverCF
+        end
+        rootPart.AssemblyLinearVelocity = Vector3.zero
+        rootPart.AssemblyAngularVelocity = Vector3.zero
+    end)
+
+    local function fightMob(model, def)
+        local root = model:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        seaHoverCF = nil
+        if def.killType == "sea" then
+            local character = localPlayer.Character
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+            if humanoid.Health <= 2500 then
+                _G.SeaSafeMode = true
+            end
+            if humanoid.Health >= 8000 then
+                _G.SeaSafeMode = false
+            end
+            local tool = character:FindFirstChildOfClass("Tool")
+            if not tool then
+                equipWeaponType(_G.SeaWeapon or _G.SelectWeapon)
+                return
+            end
+            local height = 40
+            if _G.SeaSafeMode then
+                height = 400
+            elseif tool.ToolTip == "Blox Fruit" then
+                height = 15
+            end
+            Mob.Kill(model, true, CFrame.new(root.Position + Vector3.new(0, height, 0)))
+        else
+            Mob.Kill(model, true)
+        end
+        if seaMode ~= "skills" then
+            engage("mob", root, root.Position)
+        end
+    end
+
+    local function fightBeast(model)
+        local root = model:FindFirstChild("HumanoidRootPart")
+        local character = localPlayer.Character
+        local myRoot = character and character:FindFirstChild("HumanoidRootPart")
+        if not root or not myRoot then return end
+        local level = waterLevel()
+        local fixedY = level and (level + 200) or 220
+        local target = Vector3.new(root.Position.X, fixedY, root.Position.Z)
+        setSeaHover(CFrame.new(target))
+        if (myRoot.Position - target).Magnitude <= 15 then
+            engage("beast", root, root.Position)
+        end
+    end
+
+    local function fightShip(model)
+        local engine = model:FindFirstChild("Engine")
+        local character = localPlayer.Character
+        local myRoot = character and character:FindFirstChild("HumanoidRootPart")
+        if not engine or not myRoot then return end
+        local offset = shipOffsets[model.Name] or CFrame.new(0, -30, -10)
+        setSeaHover(engine.CFrame * offset)
+        if (myRoot.Position - engine.Position).Magnitude <= 150 then
+            engage("ship", engine, engine.Position)
+        end
+    end
+
+    task.spawn(function()
+        while task.wait() do
+            if seaFarmOn() then
+                pcall(function()
+                    if seaCurrent and not (seaKeys[seaCurrentKey] and targetAlive(seaCurrent, seaTargetDefs[seaCurrentKey])) then
+                        seaCurrent = nil
+                    end
+                    if not seaCurrent then
+                        seaCurrent, seaCurrentKey = nearestTarget()
+                    end
+                    if not seaCurrent then
+                        seaWantsDragon = false
+                        seaHoverCF = nil
+                        _G.SeaWeapon = nil
+                        _G.SeaAim = nil
+                        return
+                    end
+                    local def = seaTargetDefs[seaCurrentKey]
+                    if seaMode == "fruit" or (seaMode == "combo" and def.kind ~= "ship") then
+                        _G.SeaWeapon = "Fruit"
+                    else
+                        _G.SeaWeapon = nil
+                    end
+                    local character = localPlayer.Character
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                    if humanoid and humanoid.Sit then
+                        humanoid.Sit = false
+                        task.wait(0.1)
+                    end
+                    if def.kind == "mob" then
+                        fightMob(seaCurrent, def)
+                    elseif def.kind == "beast" then
+                        fightBeast(seaCurrent)
+                    else
+                        fightShip(seaCurrent)
+                    end
+                end)
+            else
+                seaCurrent = nil
+                seaHoverCF = nil
+                _G.SeaWeapon = nil
+            end
+        end
+    end)
+
+    task.spawn(function()
+        while task.wait(0.2) do
+            local miscValue = Options.UseDragonstorm and Options.UseDragonstorm.Value or false
+            _G.UseDragonstorm = (seaFarmOn() and seaWantsDragon) or miscValue
+        end
+    end)
+
+    local function snapshotBoats()
+        local snapshot = {}
+        local boats = Workspace:FindFirstChild("Boats")
+        if boats then
+            for index, boat in ipairs(boats:GetChildren()) do
+                snapshot[boat] = true
+            end
+        end
+        return snapshot
+    end
+
+    local function findNewBoat(snapshot)
+        local boats = Workspace:FindFirstChild("Boats")
+        if not boats then return nil end
+        for index, boat in ipairs(boats:GetChildren()) do
+            if not snapshot[boat] and boat:FindFirstChild("VehicleSeat", true) then
+                return boat
+            end
+        end
+        return nil
+    end
+
+    local function buyBoat()
+        local snapshot = snapshotBoats()
+        seaRemote:InvokeServer("BuyBoat", seaBoatName)
+        local newBoat = nil
+        local attempts = 0
+        repeat
+            task.wait(0.5)
+            newBoat = findNewBoat(snapshot)
+            attempts = attempts + 1
+        until newBoat or attempts >= 10
+        if newBoat then
+            seaBoat = newBoat
+        end
+    end
+
+    local function ownBoat()
+        local boats = Workspace:FindFirstChild("Boats")
+        if boats then
+            for index, boat in ipairs(boats:GetChildren()) do
+                local owner = boat:FindFirstChild("Owner")
+                if owner and tostring(owner.Value) == localPlayer.Name then
+                    return boat
+                end
+            end
+        end
+        if seaBoat and seaBoat.Parent then return seaBoat end
+        return nil
+    end
+
+    local function zeroSeat(seat)
+        seat.AssemblyLinearVelocity = Vector3.zero
+        seat.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    local function stepBoat(boat, targetPosition, speed, dt)
+        local pivot = boat:GetPivot()
+        local delta = targetPosition - pivot.Position
+        local distance = delta.Magnitude
+        if distance < 1 then return true end
+        local move = math.min(distance, speed * dt)
+        local position = pivot.Position + delta.Unit * move
+        local flat = Vector3.new(delta.X, 0, delta.Z)
+        if flat.Magnitude > 0.1 then
+            boat:PivotTo(CFrame.lookAt(position, position + flat.Unit) * CFrame.Angles(0, math.rad(-90), 0))
+        else
+            boat:PivotTo(CFrame.new(position) * pivot.Rotation)
+        end
+        return false
+    end
+
+    local function sea2Step(dt)
+        local character = localPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not rootPart or humanoid.Health <= 0 then return end
+        if anyActive() then return end
+
+        if seaBoat and not seaBoat.Parent then
+            seaBoat = nil
+            seaArrived = false
+        end
+
+        if seaArrived then
+            local seat = seaBoat and seaBoat:FindFirstChild("VehicleSeat", true)
+            if not seat then
+                seaBoat = nil
+                seaArrived = false
+                return
+            end
+            if not humanoid.Sit then
+                _tp(seat.CFrame * CFrame.new(0, 1, 0))
+            else
+                local pivot = seaBoat:GetPivot()
+                seaBoat:PivotTo(CFrame.new(destination2.X, pivot.Y, destination2.Z) * pivot.Rotation)
+                zeroSeat(seat)
+            end
+            return
+        end
+
+        if not seaBoat then
+            if not seaBoatName then return end
+            if (boatNpc2.Position - rootPart.Position).Magnitude > 15 then
+                _tp(boatNpc2)
+            else
+                buyBoat()
+            end
+            return
+        end
+
+        local seat = seaBoat:FindFirstChild("VehicleSeat", true)
+        if not seat then
+            seaBoat = nil
+            return
+        end
+        if not humanoid.Sit then
+            _tp(seat.CFrame * CFrame.new(0, 1, 0))
+            return
+        end
+        local pivot = seaBoat:GetPivot()
+        local reached = stepBoat(seaBoat, Vector3.new(destination2.X, pivot.Y, destination2.Z), BOAT_SPEED, dt)
+        zeroSeat(seat)
+        local flat = (Vector3.new(destination2.X, 0, destination2.Z) - Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z)).Magnitude
+        if reached or flat <= 15 then
+            seaArrived = true
+        end
+    end
+
+    local function sea3Step(dt)
+        local character = localPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not rootPart or humanoid.Health <= 0 then
+            seaHadBoat = false
+            return
+        end
+
+        local boat = ownBoat()
+        local seat = boat and boat:FindFirstChild("VehicleSeat", true)
+        if seat then
+            if (rootPart.Position - seat.Position).Magnitude > 2500 then
+                boat = nil
+                seat = nil
+            else
+                seaHadBoat = true
+            end
+        else
+            boat = nil
+        end
+
+        if anyActive() then
+            seaLastExpected = nil
+            seaStuckCount = 0
+            return
+        end
+
+        if not boat then
+            if _G.ResetWhenBoatBreaks and seaHadBoat then
+                humanoid.Health = 0
+                seaHadBoat = false
+                task.wait(2)
+            elseif not seaBoatName then
+                return
+            elseif (boatNpc3.Position - rootPart.Position).Magnitude > 15 then
+                _tp(boatNpc3)
+            else
+                buyBoat()
+                task.wait(1)
+            end
+            return
+        end
+
+        if not humanoid.Sit then
+            local seatCFrame = seat.CFrame * CFrame.new(0, 1, 0)
+            if (rootPart.Position - seat.Position).Magnitude <= 30 then
+                rootPart.CFrame = seatCFrame
+                task.wait(0.1)
+            else
+                _tp(seatCFrame)
+            end
+            return
+        end
+
+        local levelName = seaLevel
+        if seaLevel == "All Levels" then
+            levelName = levelOrder[seaAllIndex]
+        end
+        local destination = levelDestinations[levelName] or levelDestinations["Lv 1"]
+        local danger = (not seaKeys.FishBoat and hasAlive("FishBoat")) or (not seaKeys.PirateBrigade and hasAlive("PirateBrigade")) or (not seaKeys.TerrorShark and hasAlive("TerrorShark"))
+        local pivot = boat:GetPivot()
+        if seaLastExpected then
+            local drift = Vector3.new(pivot.X - seaLastExpected.X, 0, pivot.Z - seaLastExpected.Z).Magnitude
+            if drift > 6 then
+                seaStuckCount = seaStuckCount + 1
+            else
+                seaStuckCount = math.max(seaStuckCount - 1, 0)
+            end
+            if seaStuckCount >= 6 then
+                seaStuckUntil = tick() + 2.5
+                seaStuckCount = 0
+            end
+        end
+        seaRaise = (danger and 150 or 0) + (tick() < seaStuckUntil and 200 or 0)
+        local flat = (Vector3.new(destination.X, 0, destination.Z) - Vector3.new(pivot.X, 0, pivot.Z)).Magnitude
+        if flat > 150 then
+            stepBoat(boat, Vector3.new(destination.X, pivot.Y, destination.Z), BOAT_SPEED, dt)
+            seaLastExpected = boat:GetPivot().Position
+            zeroSeat(seat)
+        elseif seaLevel == "All Levels" and seaAllIndex < #levelOrder then
+            seaLastExpected = nil
+            seaAllIndex = seaAllIndex + 1
+        else
+            seaLastExpected = nil
+        end
+    end
+
+    local lastStep = tick()
+    task.spawn(function()
+        while true do
+            local now = tick()
+            local dt = math.min(now - lastStep, 0.1)
+            lastStep = now
+            if _G.SeaFarm2 then
+                pcall(sea2Step, dt)
+            elseif _G.SeaFarm3 then
+                pcall(sea3Step, dt)
+            end
+            task.wait()
+        end
+    end)
+
+    localPlayer.CharacterAdded:Connect(function()
+        seaArrived = false
+        seaHadBoat = false
+    end)
+
+    local seaFixedY = nil
+    RunService.Heartbeat:Connect(function()
+        if not isSea3 then return end
+        if not (_G.SeaFarm3 or _G.SpinBoatState) then
+            seaFixedY = nil
+            return
+        end
+        if _G.SpinBoatState and anyActive() then return end
+        pcall(function()
+            local character = localPlayer.Character
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            if not humanoid or not humanoid.Sit then
+                seaFixedY = nil
+                return
+            end
+            local boats = Workspace:FindFirstChild("Boats")
+            if not boats then return end
+            for index, boat in ipairs(boats:GetChildren()) do
+                local seat = boat:FindFirstChildWhichIsA("VehicleSeat")
+                if seat and seat.Occupant == humanoid then
+                    if not seaFixedY then
+                        seaFixedY = (waterLevel() or seat.Position.Y) + 175
+                    end
+                    local cf = seat.CFrame
+                    seat.CFrame = CFrame.new(cf.X, seaFixedY + seaRaise, cf.Z) * cf.Rotation
+                    seat.AssemblyLinearVelocity = Vector3.new(seat.AssemblyLinearVelocity.X, 0, seat.AssemblyLinearVelocity.Z)
+                    seat.AssemblyAngularVelocity = Vector3.new(0, seat.AssemblyAngularVelocity.Y, 0)
+                end
+            end
+        end)
+    end)
+
+    local noclipWas = false
+    task.spawn(function()
+        while task.wait(0.5) do
+            if seaOk then
+                local active = _G.SeaFarm2 or _G.SeaFarm3 or _G.SpinBoatState
+                if active or noclipWas then
+                    pcall(function()
+                        local boats = Workspace:FindFirstChild("Boats")
+                        if not boats then return end
+                        for index, boat in ipairs(boats:GetChildren()) do
+                            for index2, part in ipairs(boat:GetDescendants()) do
+                                if part:IsA("BasePart") then
+                                    part.CanCollide = not active
+                                end
+                            end
+                        end
+                    end)
+                    noclipWas = active and true or false
+                end
+            end
+        end
+    end)
+
+    local spinBoat = nil
+    local spinParts = {}
+    local spinPivot = nil
+    local spinCenter = nil
+    local spinAngle = 0
+    local spinY = 0
+    local spinMaxY = 0
+    local spinActive = false
+
+    local function nearestBoat()
+        local boats = Workspace:FindFirstChild("Boats")
+        local character = localPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not boats or not rootPart then return nil end
+        local best, bestDistance = nil, math.huge
+        for index, boat in ipairs(boats:GetChildren()) do
+            local part = boat.PrimaryPart or boat:FindFirstChildWhichIsA("BasePart")
+            if part then
+                local distance = (part.Position - rootPart.Position).Magnitude
+                if distance < bestDistance then
+                    bestDistance = distance
+                    best = boat
+                end
+            end
+        end
+        return best
+    end
+
+    local function restoreSpin()
+        if spinBoat and spinBoat.Parent and spinPivot then
+            pcall(function()
+                for part, state in pairs(spinParts) do
+                    if part and part.Parent then
+                        part.AssemblyLinearVelocity = Vector3.zero
+                        part.AssemblyAngularVelocity = Vector3.zero
+                        part.Anchored = state.Anchored
+                        part.CanCollide = state.CanCollide
+                    end
+                end
+                local level = waterLevel()
+                local base = level and (level + 15) or 20
+                local y = math.max(spinPivot.Y + 5, base)
+                spinBoat:PivotTo(CFrame.new(spinPivot.X, y, spinPivot.Z) * spinPivot.Rotation)
+            end)
+        end
+        spinParts = {}
+        spinPivot = nil
+        spinBoat = nil
+        spinCenter = nil
+    end
+
+    RunService.Heartbeat:Connect(function(dt)
+        if not seaOk then return end
+        if _G.SpinBoatState and anyActive() then
+            if not spinActive then
+                local boat = nearestBoat()
+                if boat then
+                    spinBoat = boat
+                    spinParts = {}
+                    spinPivot = boat:GetPivot()
+                    for index, part in ipairs(boat:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            spinParts[part] = { Anchored = part.Anchored, CanCollide = part.CanCollide }
+                        end
+                    end
+                    spinCenter = spinPivot.Position
+                    spinY = spinCenter.Y
+                    spinMaxY = spinCenter.Y + 450
+                    for part in pairs(spinParts) do
+                        part.Anchored = true
+                        part.AssemblyLinearVelocity = Vector3.zero
+                        part.AssemblyAngularVelocity = Vector3.zero
+                    end
+                    spinActive = true
+                end
+            end
+            if spinActive and spinBoat and spinBoat.Parent and spinCenter then
+                spinY = math.min(spinY + 250 * dt, spinMaxY)
+                spinAngle = spinAngle + (_G.SpinBoatSpeed or 2.8) * dt
+                local position = Vector3.new(spinCenter.X + math.cos(spinAngle) * 120, spinY, spinCenter.Z + math.sin(spinAngle) * 120)
+                local look = Vector3.new(spinCenter.X, spinY, spinCenter.Z)
+                pcall(function()
+                    spinBoat:PivotTo(CFrame.new(position, look))
+                    local character = localPlayer.Character
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                    if humanoid and rootPart and humanoid.Sit then
+                        local seat = spinBoat:FindFirstChildWhichIsA("VehicleSeat")
+                        if seat then
+                            rootPart.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
+                        end
+                    end
+                end)
+            end
+        elseif spinActive then
+            spinActive = false
+            restoreSpin()
+        end
+    end)
+
+    local modeToggles = {
+        SeaUseM1Fruit = "fruit",
+        SeaUseDragonstorm = "dragon",
+        SeaDragonCombo = "combo",
+    }
+
+    local function setMode(optionId, enabled)
+        if seaLock then return end
+        local mode = modeToggles[optionId]
+        if enabled then
+            if mode == "dragon" or mode == "combo" then
+                if not hasDragonstorm() then
+                    Fluent:Notify({ Title = "Axl Hub", Content = "You don't have Dragonstorm", Duration = 5 })
+                    seaLock = true
+                    pcall(function() Options[optionId]:SetValue(false) end)
+                    seaLock = false
+                    return
+                end
+            end
+            seaMode = mode
+            seaLock = true
+            for id in pairs(modeToggles) do
+                if id ~= optionId then
+                    pcall(function() Options[id]:SetValue(false) end)
+                end
+            end
+            seaLock = false
+        elseif seaMode == mode then
+            seaMode = "skills"
+        end
+    end
+
+    local seaMessage = "Sea Events only work in Sea 2 and Sea 3"
+
+    local function addCombat()
+        Tabs.Sea:AddSection("Combat Settings")
+
+        Tabs.Sea:AddToggle("SeaUseM1Fruit", {
+            Title = "Use M1 Fruit For Sea Event",
+            Description = "Attacks every sea event with the fruit click",
+            Default = false
+        }):OnChanged(guardToggle("SeaUseM1Fruit", seaOk, seaMessage, function(value2)
+            task.spawn(setMode, "SeaUseM1Fruit", value2)
+        end))
+
+        Tabs.Sea:AddToggle("SeaUseDragonstorm", {
+            Title = "Use Dragonstorm For Sea Event",
+            Description = "Attacks every sea event with the Dragonstorm",
+            Default = false
+        }):OnChanged(guardToggle("SeaUseDragonstorm", seaOk, seaMessage, function(value2)
+            task.spawn(setMode, "SeaUseDragonstorm", value2)
+        end))
+
+        Tabs.Sea:AddToggle("SeaDragonCombo", {
+            Title = "Dragonstorm On Boats, Fruit M1 On Others",
+            Description = "Uses the Dragonstorm against boats and the fruit click against every other sea event",
+            Default = false
+        }):OnChanged(guardToggle("SeaDragonCombo", seaOk, seaMessage, function(value2)
+            task.spawn(setMode, "SeaDragonCombo", value2)
+        end))
+    end
+
+    local function addSkills()
+        Tabs.Sea:AddSection("Configure Skills for Sea Events")
+
+        Tabs.Sea:AddDropdown("SeaMeleeSkills", {
+            Title = "Melee Skills",
+            Values = { "Z", "X", "C" },
+            Multi = true,
+            Default = { "Z", "X", "C" },
+        }):OnChanged(function(p)
+            seaSkills.Melee = toSet(p)
+        end)
+
+        Tabs.Sea:AddDropdown("SeaSwordSkills", {
+            Title = "Sword Skills",
+            Values = { "Z", "X" },
+            Multi = true,
+            Default = { "Z", "X" },
+        }):OnChanged(function(p)
+            seaSkills.Sword = toSet(p)
+        end)
+
+        Tabs.Sea:AddDropdown("SeaGunSkills", {
+            Title = "Gun Skills",
+            Values = { "Z", "X" },
+            Multi = true,
+            Default = { "Z", "X" },
+        }):OnChanged(function(p)
+            seaSkills.Gun = toSet(p)
+        end)
+
+        Tabs.Sea:AddDropdown("SeaFruitSkills", {
+            Title = "Blox Fruit Skills",
+            Values = { "Z", "X", "C", "V", "F" },
+            Multi = true,
+            Default = { "Z", "X", "C" },
+        }):OnChanged(function(p)
+            seaSkills["Blox Fruit"] = toSet(p)
+        end)
+    end
+
+    local function addEventsDropdown(values)
+        Tabs.Sea:AddDropdown("SeaEvents", {
+            Title = "Select Sea Events",
+            Values = values,
+            Multi = true,
+            Default = {},
+        }):OnChanged(function(p)
+            seaKeys = {}
+            for label in pairs(toSet(p)) do
+                local key = labelKeys[label]
+                if key then
+                    seaKeys[key] = true
+                end
+            end
+        end)
+    end
+
+    local function addStartToggle()
+        Tabs.Sea:AddToggle("SeaStartFarm", {
+            Title = "Start Farm",
+            Description = "Buys a boat, sails and farms the selected sea events",
+            Default = false
+        }):OnChanged(guardToggle("SeaStartFarm", seaOk, seaMessage, function(value2)
+            if value2 and not seaBoatName then
+                Fluent:Notify({ Title = "Axl Hub", Content = "Please select a boat", Duration = 5 })
+                task.defer(function()
+                    pcall(function() Options.SeaStartFarm:SetValue(false) end)
+                end)
+                return
+            end
+            seaAllIndex = 1
+            _G.SeaFarm2 = (isSea2 and value2) and true or false
+            _G.SeaFarm3 = (isSea3 and value2) and true or false
+            if not value2 then
+                seaWantsDragon = false
+                seaCurrent = nil
+                _G.SeaAim = nil
+                if not isFarming() then stopFarming() end
+            end
+        end))
+    end
+
+    local function addSpin()
+        Tabs.Sea:AddSection("Spin Boat Settings")
+
+        Tabs.Sea:AddToggle("SpinBoatState", {
+            Title = "Spin Boat",
+            Description = "Lifts and spins the boat while sea events are active",
+            Default = false
+        }):OnChanged(guardToggle("SpinBoatState", seaOk, seaMessage, function(value2)
+            _G.SpinBoatState = value2
+        end))
+
+        Tabs.Sea:AddSlider("SpinBoatSpeed", {
+            Title = "Speed Spin Boat",
+            Min = 1,
+            Max = 20,
+            Default = 2.8,
+            Rounding = 1,
+            Callback = function(value2)
+                _G.SpinBoatSpeed = tonumber(value2) or 2.8
+            end
+        })
+    end
+
+    if isSea2 then
+        Tabs.Sea:AddSection("Sea 2 Events")
+
+        Tabs.Sea:AddDropdown("SeaBoat", {
+            Title = "Select Boat",
+            Values = boatList,
+            Multi = false,
+        }):OnChanged(function(value2)
+            seaBoatName = value2
+        end)
+
+        addEventsDropdown({ "Ships", "Sea Beast", "Shark", "Piranha" })
+        addStartToggle()
+        addCombat()
+        addSkills()
+        addSpin()
+    else
+        Tabs.Sea:AddSection(isSea3 and "Sea 3 Events" or "Only Sea 2 And 3")
+
+        Tabs.Sea:AddDropdown("SeaBoat", {
+            Title = "Select Boat",
+            Values = boatList,
+            Multi = false,
+        }):OnChanged(function(value2)
+            seaBoatName = value2
+        end)
+
+        Tabs.Sea:AddDropdown("SeaLevel", {
+            Title = "Select Level Sea",
+            Values = { "Lv 1", "Lv 2", "Lv 3", "Lv 4", "Lv 5", "Lv 6", "Lv Infinite", "All Levels" },
+            Multi = false,
+            Default = 1,
+        }):OnChanged(function(value2)
+            seaLevel = value2
+            seaAllIndex = 1
+        end)
+
+        addEventsDropdown({ "Sea Beast", "Pirate Brigade", "Shark", "Terror Shark", "Piranha", "Fish Crew", "Haunted Crew", "Fish Boat" })
+        addStartToggle()
+
+        Tabs.Sea:AddToggle("SeaResetBoat", {
+            Title = "Reset If Boat Breaks",
+            Description = "Resets your character when your boat is destroyed",
+            Default = false
+        }):OnChanged(function(value2)
+            _G.ResetWhenBoatBreaks = value2
+        end)
+
+        addCombat()
+        addSkills()
+
+        addSpin()
+    end
+end
+
 
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
